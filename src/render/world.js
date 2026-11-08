@@ -102,7 +102,26 @@ export function createWorld(canvasEl) {
     sky.position.copy(camera.position);
   }
 
-  return { renderer, scene, camera, resize, setTrack, update };
+  // quality levels: 0 = best, 3 = lowest (used automatically on slow devices)
+  let quality = 0;
+  function setQuality(level) {
+    quality = Math.max(0, Math.min(3, level));
+    const dpr = window.devicePixelRatio || 1;
+    const ratios = [Math.min(dpr, 2), Math.min(dpr, 1.25), 0.75, 0.5];
+    renderer.setPixelRatio(ratios[quality]);
+    const shadows = quality < 2;
+    if (renderer.shadowMap.enabled !== shadows) {
+      renderer.shadowMap.enabled = shadows;
+      sun.castShadow = shadows;
+      scene.traverse((o) => {
+        if (o.material) o.material.needsUpdate = true;
+      });
+    }
+    resize();
+    return quality;
+  }
+
+  return { renderer, scene, camera, resize, setTrack, update, setQuality, getQuality: () => quality };
 }
 
 function makeClouds() {

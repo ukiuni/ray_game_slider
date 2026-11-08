@@ -324,7 +324,8 @@ function frame(now) {
   requestAnimationFrame(frame);
   let dt = (now - last) / 1000;
   last = now;
-  if (dt > 0.1) dt = 0.1;
+  perf.sample(dt);
+  if (dt > 0.25) dt = 0.25;
   if (document.visibilityState === 'hidden') return;
 
   const steer = steerValue();
@@ -358,6 +359,28 @@ function frame(now) {
   view.render();
 }
 let timeScale = DEBUG && params.has('speed') ? Number(params.get('speed')) : 1;
+
+// adaptive quality: lower the resolution / disable shadows when the device can't keep up
+const perf = {
+  acc: 0,
+  frames: 0,
+  sample(dt) {
+    if (document.visibilityState !== 'visible' || dt > 1) return;
+    this.acc += dt;
+    this.frames++;
+    if (this.acc >= 2) {
+      const avg = this.acc / this.frames;
+      const q = view.world.getQuality();
+      if (avg > 1 / 40 && q < 3) {
+        view.world.setQuality(q + 1);
+        view.effects.setViewportHeight(window.innerHeight);
+      }
+      this.acc = 0;
+      this.frames = 0;
+    }
+  },
+};
+if (params.get('quality') === 'low') view.world.setQuality(3);
 
 window.addEventListener('resize', () => view.resize());
 window.addEventListener('orientationchange', () => setTimeout(() => view.resize(), 200));

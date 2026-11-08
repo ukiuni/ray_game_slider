@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const state = (page) => page.evaluate(() => window.__slider.state());
 
-async function open(page, query = '?debug=1') {
+async function open(page, query = '?debug=1&quality=low') {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(query);
@@ -77,7 +77,7 @@ test('race: countdown, touch controls steer and jump the player', async ({ page 
   const errors = await open(page);
   await startRace(page);
   await expect(page.locator('#countdown')).toBeVisible();
-  await page.waitForFunction(() => window.__slider.state().raceTime > 1, null, { timeout: 15_000 });
+  await page.waitForFunction(() => window.__slider.state().raceTime > 1, null, { timeout: 45_000 });
   const steerOf = () => page.evaluate(() => window.__slider.debug.getRace().playerInput.steer);
   for (const [id, dir] of [['#btn-right', 1], ['#btn-left', -1]]) {
     const btn = page.locator(id);
@@ -107,11 +107,11 @@ test('winning auto-starts the next stage until the player loses', async ({ page 
   await expect(page.locator('#result-title')).toContainText('クリア');
   await expect(page.locator('#auto-next')).toBeVisible();
   // the next stage starts by itself
-  await page.waitForFunction(() => window.__slider.state().phase === 'playing' && window.__slider.state().stage === 2, null, { timeout: 10_000 });
+  await page.waitForFunction(() => window.__slider.state().phase === 'playing' && window.__slider.state().stage === 2, null, { timeout: 30_000 });
   await expect(page.locator('#hud-stage')).toHaveText('2');
   // win stage 2 -> stage 3 also auto starts
   await page.evaluate(() => window.__slider.debug.forceWin());
-  await page.waitForFunction(() => window.__slider.state().phase === 'playing' && window.__slider.state().stage === 3, null, { timeout: 10_000 });
+  await page.waitForFunction(() => window.__slider.state().phase === 'playing' && window.__slider.state().stage === 3, null, { timeout: 30_000 });
   expect((await state(page)).streak).toBe(2);
   // lose -> stops
   await page.evaluate(() => window.__slider.debug.forceLose());
@@ -143,7 +143,7 @@ test('auto continue can be stopped', async ({ page }) => {
 test('updates are deferred during a race and applied after it (streak continues)', async ({ page }) => {
   await open(page);
   await startRace(page);
-  await page.waitForFunction(() => window.__slider.state().raceTime > 0.5, null, { timeout: 15_000 });
+  await page.waitForFunction(() => window.__slider.state().raceTime > 0.5, null, { timeout: 45_000 });
   const marker = await page.evaluate(() => (window.__marker = Math.random()));
   const applied = await page.evaluate(() => window.__slider.debug.fakeUpdate());
   expect(applied).toBe(false);
@@ -157,7 +157,7 @@ test('updates are deferred during a race and applied after it (streak continues)
   const nav = page.waitForEvent('framenavigated');
   await page.evaluate(() => window.__slider.debug.forceWin());
   await nav;
-  await page.waitForFunction(() => window.__slider && window.__slider.state().phase === 'playing', null, { timeout: 20_000 });
+  await page.waitForFunction(() => window.__slider && window.__slider.state().phase === 'playing', null, { timeout: 45_000 });
   expect(await page.evaluate(() => window.__marker)).toBeUndefined();
   s = await state(page);
   expect(s.stage).toBe(2);

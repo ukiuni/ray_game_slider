@@ -58,7 +58,7 @@ export class Race {
   }
 
   update(dt) {
-    dt = Math.min(dt, 0.1);
+    dt = Math.min(dt, 0.25);
     this.acc += dt;
     while (this.acc >= FIXED_DT) {
       this.acc -= FIXED_DT;
