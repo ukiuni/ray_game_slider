@@ -20,6 +20,9 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(version),
   },
+  test: {
+    include: ['tests/unit/**/*.test.js'],
+  },
   build: {
     target: 'es2020',
     chunkSizeWarningLimit: 1200,
